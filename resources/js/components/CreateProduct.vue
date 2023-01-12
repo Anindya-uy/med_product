@@ -1,5 +1,8 @@
 <template>
     <section>
+        <div v-if="this.success" class="alert alert-success alert-dismissible fade show" role="alert">
+            Product Created successfully.
+        </div>
         <div class="row">
             <div class="col-md-6">
                 <div class="card shadow mb-4">
@@ -24,7 +27,11 @@
                         <h6 class="m-0 font-weight-bold text-primary">Media</h6>
                     </div>
                     <div class="card-body border">
-                        <vue-dropzone ref="myVueDropzone" id="dropzone" :options="dropzoneOptions"></vue-dropzone>
+                        <vue-dropzone ref="myVueDropzone" id="dropzone" :options="dropzoneOptions"
+                        @vdropzone-success="uploaded"
+                        @vdropzone-file-added="addfile">
+
+                        </vue-dropzone>
                     </div>
                 </div>
             </div>
@@ -125,15 +132,33 @@ export default {
                 }
             ],
             product_variant_prices: [],
+            success: false,
             dropzoneOptions: {
-                url: 'https://httpbin.org/post',
+                url: "http://localhost:8000/api/product",
                 thumbnailWidth: 150,
-                maxFilesize: 0.5,
+                maxFilesize: 2,
+                autoProcessQueue: false,
+                uploadMultiple: true,
+                parallelUploads: 100,
+                maxFiles: 100,
                 headers: {"My-Awesome-Header": "header value"}
             }
         }
     },
     methods: {
+        uploaded: async function(file,response){
+            console.log(response)
+        },
+        addfile: async function(file){
+            // this.images = this.$refs.myVueDropzone.getAcceptedFiles();
+            this.images.push(file);
+            console.log(this.images)
+        },
+        // sending: async function(file, xhr, formData){
+        //     formData.append('title', this.product_name);
+        //     console.log(formData.file)
+        // },
+
         // it will push a new object into product variant
         newVariant() {
             let all_variants = this.variants.map(el => el.id)
@@ -179,29 +204,48 @@ export default {
 
         // store product into database
         saveProduct() {
-            let product = {
-                title: this.product_name,
-                sku: this.product_sku,
-                description: this.description,
-                product_image: this.images,
-                product_variant: this.product_variant,
-                product_variant_prices: this.product_variant_prices
+            console.log(this.product_variant)
+
+            let product = new FormData();
+            product.append('title', this.product_name);
+            product.append('sku', this.product_sku);
+            product.append('description', this.description);
+            for (let x = 0; x < this.images.length; x++){ 
+                product.append('product_image[]', this.images[x]);
+            }
+            for (let x = 0; x < this.product_variant.length; x++){ 
+                product.append('product_variant[]', JSON.stringify(this.product_variant[x]));
+            }
+            for (let x = 0; x < this.product_variant_prices.length; x++){ 
+                product.append('product_variant_prices[]', JSON.stringify(this.product_variant_prices[x]));
             }
 
+            // let product = {
+            //     title: this.product_name,
+            //     sku: this.product_sku,
+            //     description: this.description,
+            //     product_image: this.images,
+            //     product_variant: this.product_variant,
+            //     product_variant_prices: this.product_variant_prices
+            // }
+
+            console.log(product)
 
             axios.post('/product', product).then(response => {
+                this.success = true;
+                setTimeout(() => {
+                    this.success = false;
+                }, 3000);
                 console.log(response.data);
             }).catch(error => {
+                this.success = false;
                 console.log(error);
             })
-
-            console.log(product);
-        }
-
+        },
 
     },
     mounted() {
         console.log('Component mounted.')
-    }
+    },  
 }
 </script>

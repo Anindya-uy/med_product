@@ -6,16 +6,21 @@
         <h1 class="h3 mb-0 text-gray-800">Products</h1>
     </div>
 
-
+        {{-- {{ dd($productVariants) }} --}}
+        
     <div class="card">
-        <form action="" method="get" class="card-header">
+        <form action="{{route('search')}}" method="get" class="card-header">
+            @csrf
             <div class="form-row justify-content-between">
                 <div class="col-md-2">
                     <input type="text" name="title" placeholder="Product Title" class="form-control">
                 </div>
                 <div class="col-md-2">
-                    <select name="variant" id="" class="form-control">
-
+                    <select name="variant" id="select" class="form-control">
+                        <option value="" selected>Select variant</option>
+                    @foreach($productVariants as $data)
+                        <option value="{{$data->id}}">{{$data->variant}}</option>
+                    @endforeach
                     </select>
                 </div>
 
@@ -43,58 +48,78 @@
                     <thead>
                     <tr>
                         <th>#</th>
-                        <th>Title</th>
+                        <th width="150px">Title</th>
                         <th>Description</th>
                         <th>Variant</th>
-                        <th width="150px">Action</th>
+                        <th >Action</th>
                     </tr>
                     </thead>
 
                     <tbody>
+                    @foreach($products as $key=>$product)
+                        {{-- dd($product->prices) --}}
+                        <tr>
+                            <td>{{ $key +1 }}</td>
+                            <td>{{ $product->title }} <br> {{ date('d-M-Y', strtotime($product->created_at)) }}</td>
+                            <td>{{ Str::limit($product->description,'50','...') }}</td>
+                            <td>
+                                
+                                <dl class="row mb-0" style="height: 80px; overflow: hidden" id="variant">
+                                    @foreach($product->prices as $key=>$price)
+                                     <dt class="col-sm-3 pb-0">
+                                        {{ $price->product_variant_one }}/
+                                        {{ $price->product_variant_two }}/
+                                        {{ $price->product_variant_three }}
+                                    </dt>
+                                    <dd class="col-sm-9">
+                                        <dl class="row mb-0">
+                                            <dt class="col-sm-4 pb-0">Price : {{ number_format($price->price, 2) }}</dt>
+                                            <dd class="col-sm-8 pb-0">InStock : {{ number_format($price->stock,2) }}</dd>
+                                        </dl>
+                                    
+                                    </dd>
+                                    @endforeach
+                                </dl>
+                                
+                                <button onclick="$('#variant').toggleClass('h-auto')" class="btn btn-sm btn-link">Show more</button>
 
-                    <tr>
-                        <td>1</td>
-                        <td>T-Shirt <br> Created at : 25-Aug-2020</td>
-                        <td>Quality product in low cost</td>
-                        <td>
-                            <dl class="row mb-0" style="height: 80px; overflow: hidden" id="variant">
-
-                                <dt class="col-sm-3 pb-0">
-                                    SM/ Red/ V-Nick
-                                </dt>
-                                <dd class="col-sm-9">
-                                    <dl class="row mb-0">
-                                        <dt class="col-sm-4 pb-0">Price : {{ number_format(200,2) }}</dt>
-                                        <dd class="col-sm-8 pb-0">InStock : {{ number_format(50,2) }}</dd>
-                                    </dl>
-                                </dd>
-                            </dl>
-                            <button onclick="$('#variant').toggleClass('h-auto')" class="btn btn-sm btn-link">Show more</button>
-                        </td>
-                        <td>
-                            <div class="btn-group btn-group-sm">
-                                <a href="{{ route('product.edit', 1) }}" class="btn btn-success">Edit</a>
-                            </div>
-                        </td>
-                    </tr>
-
+                            </td>
+                            <td>
+                                <div class="btn-group btn-group-sm">
+                                    <a href="{{ route('product.edit', 1) }}" class="btn btn-success">Edit</a>
+                                </div>
+                            </td>
+                        </tr>
+                    @endforeach
                     </tbody>
 
                 </table>
             </div>
-
         </div>
 
+        
         <div class="card-footer">
-            <div class="row justify-content-between">
-                <div class="col-md-6">
-                    <p>Showing 1 to 10 out of 100</p>
+            <div class="d-flex justify-content-between">
+                <div>
+                    @php
+                        $show = $products->perPage() * ($products->currentPage()-1) + 1;
+                        $to = $products->perPage() * $products->currentPage();
+                        $sum = $products->total();
+                    @endphp
+                    <p>
+                        Showing {{$show > $sum ? $sum : $show}}
+                        to 
+                        {{$to > $sum ? $sum : $to}}
+                        out of 
+                        {{$sum}}
+                    </p>
                 </div>
-                <div class="col-md-2">
-
+                <div>
+                    {{ $products->links()}}
                 </div>
             </div>
         </div>
     </div>
+    
 
 @endsection
